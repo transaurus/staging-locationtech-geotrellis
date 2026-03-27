@@ -1,0 +1,70 @@
+version: 2.1
+
+aliases:
+  - &restore_build_cache
+    key: v1-dependencies-{{ checksum "build.sbt" }}-{{ checksum "project/Settings.scala" }}-{{ checksum "project/Dependencies.scala" }}
+
+  - &save_build_cache
+    key: v1-dependencies-{{ checksum "build.sbt" }}-{{ checksum "project/Settings.scala" }}-{{ checksum "project/Dependencies.scala" }}
+    paths:
+      - "~/.ivy2/cache"
+      - "~/.cache/coursier"
+      - "~/.sbt"
+      - "~/.m2"
+
+executors:
+  executor-gdal:
+    docker:
+      - image: quay.io/azavea/openjdk-gdal:3.1-jdk8-slim
+        environment:
+          # https://circleci.com/docs/2.0/java-oom/
+          _JAVA_OPTIONS: "-Xms128m -Xmx2g"
+
+jobs:
+  scaladocs:
+    parameters:
+      scala-version:
+        type: string
+    executor: executor-gdal
+    environment:
+      SCALA_VERSION: << parameters.scala-version >>
+    steps:
+      - checkout
+      - restore_cache: *restore_build_cache
+      - run:
+          name: Scaladocs publish
+          command: |
+            ./sbt -Dsbt.supershell=false "++$SCALA_VERSION" unidoc
+            .circleci/scaladocs.sh || true
+      - save_cache: *save_build_cache
+
+  publish:
+    executor: executor-gdal
+    steps:
+      - checkout
+      - restore_cache: *restore_build_cache
+      - run:
+          name: Artifacts publish
+          command: |
+            if [[ ! -z "$SONATYPE_PASSWORD" && ! -z "$SONATYPE_USERNAME" ]]; then
+              ./sbt -Dsbt.supershell=false ci-release
+            fi
+      - save_cache: *save_build_cache
+
+workflows:
+  test-and-publish:
+    jobs:
+      - scaladocs:
+          matrix:
+            parameters:
+              scala-version: ["2.12.16"]
+          filters:
+            branches:
+              only: master
+
+      # - publish:
+      #     filters:
+      #       branches:
+      #         only: /.*/
+      #       tags:
+      #         only: /^v.*/
