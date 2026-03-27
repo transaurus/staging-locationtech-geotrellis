@@ -1,0 +1,14 @@
+{
+  "description": "Repository-specific fixes for locationtech/geotrellis",
+  "fixes": {
+    "docusaurus.config.js": [
+      {
+        "type": "replace",
+        "find": "onBrokenLinks: 'throw'",
+        "replace": "onBrokenLinks: 'warn'",
+        "comment": "No root page exists in this repo; suppress broken link errors during build"
+      }
+    ]
+  },
+  "newFiles": {}
+}
