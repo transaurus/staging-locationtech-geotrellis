@@ -1,0 +1,10 @@
+{
+  "sourceUrl": "https://github.com/locationtech/geotrellis",
+  "branch": "master",
+  "docusaurusRoot": "website",
+  "configFile": "website/docusaurus.config.js",
+  "translateCommand": "npx docusaurus write-translations",
+  "buildCommand": "yarn build",
+  "buildOutput": "build",
+  "packageManager": "yarn"
+}
